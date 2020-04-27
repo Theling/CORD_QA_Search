@@ -14,7 +14,7 @@ class BERT_SQUAD_QA:
 
 
     def split_doc(self, text, question, overlap_rate):
-        token_ls = self.tokenizer.encode(text)
+        token_ls = self.tokenizer.encode(text) #this step gives a length warning, ignore it
         question_ls = self.tokenizer.encode(question)
         question_len = len(question_ls)
     #     print(question_len)
@@ -43,7 +43,7 @@ class BERT_SQUAD_QA:
         assert len(segment_ids) == len(ipt_ids)
         n_ids = len(segment_ids)
         assert n_ids < 512
-        print(len(ipt_ids))
+        # print(len(ipt_ids))
         start_scores, end_scores = self.model(ipt_ids, segment_ids)
         # Plan 1:
     #     answer_start, answer_end = torch.argmax(start_scores), \
@@ -91,7 +91,7 @@ class BERT_SQUAD_QA:
         overlap_rate = 1.1
         doc_pieces = self.split_doc(document, question, overlap_rate)
         input_ids = [self.tokenizer.encode(question, dp) for dp in doc_pieces] 
-        print([len(i) for i in input_ids])
+        # print([len(i) for i in input_ids])
         answers = []
         confidences = []
         for ipt_id in input_ids:
