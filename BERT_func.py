@@ -112,7 +112,8 @@ class BERT_SQUAD_QA:
         max_conf = max(confidences)
         argmax_conf = np.argmax(confidences)
         max_answer = answers[argmax_conf]
-        return {'answer': answer,
+        return {'answer': max_answer,
+                'abstract_bert': self.reconstruct_text(tokens_wo_question),
                 'confidence': max_conf,
                 'text': document}
         
@@ -120,7 +121,7 @@ class BERT_SQUAD_QA:
     def search_abstracts(self, hit_dictionary, question):
         result = OrderedDict()
         for k,v in tqdm(hit_dictionary.items()):
-            abstract = v['abstract_full']
+            abstract = v['abs_text']
             if abstract:
                 ans = self.make_bert_squad_prediction(abstract, question)
                 if ans['answer']: result[k]=ans
