@@ -133,6 +133,9 @@ class BERT_SQUAD_QA:
             exp_scores = np.exp(c_ls - max_score)
             for i,k in enumerate(result):
                 result[k]['confidence'] = exp_scores[i]
+                result[k]['title'] = hit_dictionary[k]['title']
+                result[k]['author'] = hit_dictionary[k]['author']
+
                 
         ret = {}
         for k in result:
