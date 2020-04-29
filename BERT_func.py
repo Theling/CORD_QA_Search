@@ -118,10 +118,15 @@ class BERT_SQUAD_QA:
                 'text': document}
         
 
-    def search_abstracts(self, hit_dictionary, question):
+    def search_abstracts(self, hit_dictionary, question, abst = True):
         result = OrderedDict()
         for k,v in tqdm(hit_dictionary.items()):
-            abstract = v['abs_text']
+            if abst:
+                abstract = v['abstract']
+                #print('Search with only abstract')
+            else:
+                abstract = v['abs_text']
+                #print ('Search with full paper')
             if abstract:
                 ans = self.make_bert_squad_prediction(abstract, question)
                 if ans['answer']: result[k]=ans
