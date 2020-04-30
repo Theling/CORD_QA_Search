@@ -124,10 +124,9 @@ class BERT_SQUAD_QA:
 
             answer_start, answer_end, total_score = self.look_for_span(start_scores, end_scores)
             print(answer_start, answer_end, total_score)
-            # tokens = self.tokenizer.convert_ids_to_tokens(ipt_id)
+
             answer = self.reconstruct_text(tokens_wo_question, answer_start, answer_end+1)
-            # total_score = start_scores[0,answer_start].item()+\
-            #             end_scores[0,answer_end].item()
+
             answers.append(answer)
             confidences.append(total_score)
         max_conf = max(confidences)
@@ -151,7 +150,7 @@ class BERT_SQUAD_QA:
                 #print ('Search with full paper')
             if abstract:
                 ans = self.make_bert_squad_prediction(abstract, question)
-#                 if ans['answer']: 
+
                 result[k]=ans
         c_ls = np.array([result[key]['confidence'] for key in result])
 
