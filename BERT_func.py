@@ -85,7 +85,27 @@ class BERT_SQUAD_QA:
         if answer.startswith('. ') or answer.startswith(', '):
                 answer = answer[2:]
         return answer
-            
+
+    def look_for_span(self, start_scores, end_scores):
+        assert len(start_scores)==len(end_scores), \
+                f'length of start score does not match end scores: {len(start_scores)}!={len(end_scores)}'
+        start_idx = np.argmax(start_scores)
+        end_idx = np.argmax(end_scores)
+        if start_idx <= end_idx:
+            return start_idx, end_idx, start_scores[start_idx]+end_scores[end_idx]
+        else:
+            head_start_idx, _, head_score = \
+                self.look_for_span(start_scores[0:end_idx+1], end_scores[0:end_idx+1])
+            _, tail_end_idx, tail_score = \
+                self.look_for_span(start_scores[start_idx:], end_scores[start_idx:])
+#             print(head_start_idx, end_idx, head_score)
+#             print(start_idx, tail_end_idx+ start_idx, tail_score)
+            if head_score > tail_score:
+                return head_start_idx, end_idx, head_score
+            else:
+                tail_end_idx = tail_end_idx + start_idx
+                return start_idx, tail_end_idx, tail_score
+
 
     def make_bert_squad_prediction(self, document, question):
         overlap_rate = 1.1
@@ -97,16 +117,17 @@ class BERT_SQUAD_QA:
         for ipt_id in input_ids:
             start_scores, end_scores, info = self.bert_pred(ipt_id)
             sep_index = info['sep_idx']
-            start_scores, end_scores = start_scores[:, sep_index:], \
-                                end_scores[:, sep_index:]
-            tokens_wo_question = info['tokens'][sep_index:]
+            start_scores, end_scores = start_scores[:, sep_index+1:-1], \
+                                end_scores[:, sep_index+1:-1]
+            start_scores, end_scores = start_scores.data.numpy()[0], end_scores.data.numpy()[0]
+            tokens_wo_question = info['tokens'][sep_index+1:-1]
 
-            answer_start, answer_end = torch.argmax(start_scores), \
-                                    torch.argmax(end_scores)
-            tokens = self.tokenizer.convert_ids_to_tokens(ipt_id)
+            answer_start, answer_end, total_score = self.look_for_span(start_scores, end_scores)
+            print(answer_start, answer_end, total_score)
+            # tokens = self.tokenizer.convert_ids_to_tokens(ipt_id)
             answer = self.reconstruct_text(tokens_wo_question, answer_start, answer_end+1)
-            total_score = start_scores[0,answer_start].item()+\
-                        end_scores[0,answer_end].item()
+            # total_score = start_scores[0,answer_start].item()+\
+            #             end_scores[0,answer_end].item()
             answers.append(answer)
             confidences.append(total_score)
         max_conf = max(confidences)
@@ -117,6 +138,7 @@ class BERT_SQUAD_QA:
                 'confidence': max_conf,
                 'text': document}
         
+     
 
     def search_abstracts(self, hit_dictionary, question, abst = True):
         result = OrderedDict()
@@ -129,7 +151,8 @@ class BERT_SQUAD_QA:
                 #print ('Search with full paper')
             if abstract:
                 ans = self.make_bert_squad_prediction(abstract, question)
-                if ans['answer']: result[k]=ans
+#                 if ans['answer']: 
+                result[k]=ans
         c_ls = np.array([result[key]['confidence'] for key in result])
 
         if len(c_ls) != 0:
@@ -170,46 +193,49 @@ if __name__ == "__main__":
     QA_MODEL.to(torch_device)
     QA_MODEL.eval()
 
-    query = 'Which non-pharmaceutical interventions limit tramsission'
+    query = 'What is known about transmission, incubation, and environmental stability'
     keywords = '2019-nCoV, SARS-CoV-2, COVID-19, non-pharmaceutical interventions, npi'
 
-    import json
-    searcher = pysearch.SimpleSearcher(luceneDir)
-    hits = searcher.search(query + '. ' + keywords)
-    n_hits = len(hits)
-    ## collect the relevant data in a hit dictionary
-    hit_dictionary = {}
-    for i in range(0, n_hits):
-        doc_json = json.loads(hits[i].raw)
-        idx = str(hits[i].docid)
-        hit_dictionary[idx] = doc_json
-        hit_dictionary[idx]['title'] = hits[i].lucene_document.get("title")
-        hit_dictionary[idx]['authors'] = hits[i].lucene_document.get("authors")
-        hit_dictionary[idx]['doi'] = hits[i].lucene_document.get("doi")
+    # import json
+    # searcher = pysearch.SimpleSearcher(luceneDir)
+    # hits = searcher.search(query + '. ' + keywords)
+    # n_hits = len(hits)
+    # ## collect the relevant data in a hit dictionary
+    # hit_dictionary = {}
+    # for i in range(0, n_hits):
+    #     doc_json = json.loads(hits[i].raw)
+    #     idx = str(hits[i].docid)
+    #     hit_dictionary[idx] = doc_json
+    #     hit_dictionary[idx]['title'] = hits[i].lucene_document.get("title")
+    #     hit_dictionary[idx]['authors'] = hits[i].lucene_document.get("authors")
+    #     hit_dictionary[idx]['doi'] = hits[i].lucene_document.get("doi")
 
-    ## scrub the abstracts in prep for BERT-SQuAD
-    for idx,v in hit_dictionary.items():
-        abs_dirty = v['abstract']
-        # looks like the abstract value can be an empty list
-        v['abstract_paragraphs'] = []
-        v['abstract_full'] = ''
+    # ## scrub the abstracts in prep for BERT-SQuAD
+    # for idx,v in hit_dictionary.items():
+    #     abs_dirty = v['abstract']
+    #     # looks like the abstract value can be an empty list
+    #     v['abstract_paragraphs'] = []
+    #     v['abstract_full'] = ''
 
-        if abs_dirty:
-            # looks like if it is a list, then the only entry is a dictionary wher text is in 'text' key
-            # looks like it is broken up by paragraph if it is in that form.  lets make lists for every paragraph
-            # and a new entry that is full abstract text as both could be valuable for BERT derrived QA
-
-
-            if isinstance(abs_dirty, list):
-                for p in abs_dirty:
-                    v['abstract_paragraphs'].append(p['text'])
-                    v['abstract_full'] += p['text'] + ' \n\n'
-
-            # looks like in some cases the abstract can be straight up text so we can actually leave that alone
-            if isinstance(abs_dirty, str):
-                v['abstract_paragraphs'].append(abs_dirty)
-                v['abstract_full'] += abs_dirty + ' \n\n'
+    #     if abs_dirty:
+    #         # looks like if it is a list, then the only entry is a dictionary wher text is in 'text' key
+    #         # looks like it is broken up by paragraph if it is in that form.  lets make lists for every paragraph
+    #         # and a new entry that is full abstract text as both could be valuable for BERT derrived QA
 
 
+    #         if isinstance(abs_dirty, list):
+    #             for p in abs_dirty:
+    #                 v['abstract_paragraphs'].append(p['text'])
+    #                 v['abstract_full'] += p['text'] + ' \n\n'
+
+    #         # looks like in some cases the abstract can be straight up text so we can actually leave that alone
+    #         if isinstance(abs_dirty, str):
+    #             v['abstract_paragraphs'].append(abs_dirty)
+    #             v['abstract_full'] += abs_dirty + ' \n\n'
+
+    import joblib
     QA_model = BERT_SQUAD_QA(QA_TOKENIZER, QA_MODEL)
-    print(QA_model.search_abstracts(hit_dictionary, query))
+    hit_dictionary = joblib.load('False.pkl')
+    query = "What is known about transmission, incubation, and environmental stability"
+    ans_full = QA_model.make_bert_squad_prediction(list(hit_dictionary.values())[0]['abs_text'], query)
+    print(ans_full)
