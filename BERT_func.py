@@ -123,7 +123,7 @@ class BERT_SQUAD_QA:
             tokens_wo_question = info['tokens'][sep_index+1:-1]
 
             answer_start, answer_end, total_score = self.look_for_span(start_scores, end_scores)
-            print(answer_start, answer_end, total_score)
+            #print(answer_start, answer_end, total_score)
 
             answer = self.reconstruct_text(tokens_wo_question, answer_start, answer_end+1)
 
