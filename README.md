@@ -1,6 +1,7 @@
-# To evaluating our project, you could open Main.ipynb with Jyputer Notebook, we have seld-explained code and comments. You can see all results displayed in the end of notebook without running our code.
+# To evaluating our project:
+* You could open Main.ipynb with Jyputer Notebook, we have seld-explained code and comments. You can see all results displayed in the end of notebook without running our code.
 
-# To run our code, you need to JDK 11 first by following instruction and then run each cell in the notebook.
+* To run our code, you need to JDK 11 first by following instruction and then run each cell in the notebook.
 
 # Install Dependencies
 ## Install JDK 11
