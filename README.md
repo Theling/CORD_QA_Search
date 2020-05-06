@@ -18,7 +18,7 @@ tar -xvf openjdk-11.0.2_osx-x64_bin.tar.gz
 sudo mv jdk-11.0.2.jdk /Library/Java/JavaVirtualMachines/
 ```
 
-* Install JDK 11 on Debian (WSL)
+* Install JDK 11 on Debian Linux (including WSL)
 
 ```shell
 curl -O https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz
