@@ -2,6 +2,7 @@
 * You could open Main.ipynb with Jyputer Notebook, we have seld-explained code and comments. You can see all results displayed in the end of notebook without running our code.
 
 * To run our code, you need to JDK 11 first by following instruction and then run each cell in the notebook.
+and download the provided database from https://drive.google.com/file/d/1VRB6xmkUqYqXSSUF2PjeSAXc7vGXZKwb/view?usp=sharing
 
 # Install Dependencies
 ## Install JDK 11
