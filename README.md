@@ -34,7 +34,8 @@ This program has been tested on Ubuntu 18.04 and MacOS 10.15. The following inst
 * Firstly, you need to create a virtual environment using ```conda``` in case messing up your local Python environment
 
 ```shell
-conda create -n <Env Name> python=3.7
+conda create -n <Env_name> python=3.7
+conda activate <Env_name>
 ```
 
 * Secondly, install packages from provided requirement list ```requirements.txt``` using ```pip``` and ```conda```
