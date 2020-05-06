@@ -43,7 +43,7 @@ conda create -n <Env Name> python=3.8
 while read requirement; do conda install --yes $requirement || pip install $requirement; done < requirements.txt
 ```
 
-* If the second step failed, please try install core packages mannual. This is a list of core package used in our program:
+* If the second step failed, please try to install core packages mannually. This is a list of core packages used in our program:
 
   * pyserini==0.8.1.0
   * tensorflow==2.0
